@@ -1,80 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-
 #include "driver/adc.h"
-
 #include "ssd1306.h"
 
-/// @brief field structure
+#define JOYSTICK_X_AXIS ADC1_CHANNEL_3
+#define JOYSTICK_Y_AXIS ADC1_CHANNEL_0
+
+typedef struct Item{
+    int x_pos;
+    int y_pos;
+    int x_prev;
+    int y_prev;
+    int x_next;
+    int y_next;
+
+	int radius;
+}Item;
+
 typedef struct {
-    int width;
-    int height;
     int x0;
     int x1;
     int y0;
     int y1;
-}Field;
+}Frame_t;
 
-
-/// @brief stick structure
 typedef struct {
-    int x_pos;
-    int y_pos;
-    int y_speed;
-	int length;
-}Stick;
+    Frame_t frame;
 
+    Item player;
+    Item enemy_one;
+    Item heart;
 
-/// @brief ball structure
-typedef struct Ball{
-    int x_pos;
-    int y_pos;
+    uint8_t win;
+    uint8_t screamer;
+}Game_t;
 
-    int x_pos_old;
-    int y_pos_old;
+SSD1306_t dev;
+Game_t game;
 
-    int x_speed;
-    int y_speed;
-
-	int radius;
-}Ball;
-
-
-/// @brief game structure
-typedef struct {
-    Field field;
-    Ball ball;
-    Stick player;
-    Stick bot;
-    int score1;
-    int score2;
-}Pong;
-
-// display variable
-SSD1306_t display;
-// game variable
-Pong pong;
-
-
-void init_display();
-void draw_field();
-void draw_stick(Stick stick);
-void update_stick(Stick stick);
-void draw_ball(Ball ball);
-void update_ball(Ball ball);
-void draw_objects();
-
-// Define ADC channel for Y axis of the joystick
-#define JOYSTICK_Y_AXIS ADC1_CHANNEL_0
-
-
-void joystick_task(void *pvParameter);
-void init_joystick();
-
-
-void start_game();
+void start();

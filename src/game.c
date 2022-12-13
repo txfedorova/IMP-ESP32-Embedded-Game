@@ -1,357 +1,433 @@
 #include "game.h"
 
-/// @brief Draw the play field
-void draw_field() {
-    // top edge
-    _ssd1306_line(&display, 0, 0, 127, 0, true);
-    // bottom edge
-	_ssd1306_line(&display, 0, 63, 127, 63, false);
-    // display edges
-	ssd1306_show_buffer(&display);
+// screamer image (me)
+static uint8_t me[1024] = { 
+0xFF, 0xE0, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xE0, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x1F, 0xFF, 0xFF, 0xFF, 0xF8, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x00, 0x00, 0x03, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x40, 0x00, 0x00, 0x3F, 0xFF, 0xFF, 0xF8, 0x03, 0xFC, 0x00,
+0xFF, 0xFF, 0x80, 0x3F, 0xFF, 0xFF, 0xC0, 0x00, 0x00, 0x7F, 0xFF, 0xFE, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0x07, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x7F, 0xFF, 0xE0, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xE0, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00,
+0xF7, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xE0, 0x00,
+0xC0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0x00,
+0xC0, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x3F, 0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x00,
+0xC0, 0x03, 0xFF, 0xFF, 0xFF, 0xFF, 0x1F, 0x00, 0x00, 0x07, 0x9F, 0xFF, 0xFF, 0xC0, 0x00, 0x00,
+0x80, 0x00, 0x1F, 0xFF, 0xFE, 0x00, 0x1F, 0x00, 0x00, 0x00, 0x02, 0xFF, 0xE0, 0x00, 0x00, 0x00,
+0xC0, 0x00, 0x00, 0x72, 0x00, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xD0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xE0, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xF0, 0x00, 0x00, 0x00, 0xC0, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFE, 0x00, 0x00, 0xE0, 0x71, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFF, 0xE0, 0x07, 0xC4, 0xBF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x60, 0x00, 0x00, 0x07, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0xFF, 0xFF, 0xF0, 0x7F, 0xFE, 0x40, 0x3F, 0x00, 0x00, 0x1F, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0x3F, 0xFF, 0xFF, 0xFE, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0x0F, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x1F, 0xFF, 0xFF, 0xFC, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0x04, 0xFF, 0xFF, 0xFC, 0x00, 0x00, 0x1F, 0xFF, 0xFF, 0xF8, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x01, 0xFF, 0xF0, 0x00, 0x00, 0x1F, 0xFF, 0xFF, 0xF0, 0x00,
+0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0xFF, 0xFF, 0xE0, 0x00,
+0xFF, 0xFF, 0xF8, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0xFF, 0xFF, 0x80, 0x00,
+0xFF, 0x8F, 0xE0, 0x77, 0xFF, 0xFF, 0xFE, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFE, 0x00, 0x00,
+0xFF, 0x83, 0xE0, 0x01, 0xFF, 0xFF, 0xFF, 0xFB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x00,
+0xFF, 0x80, 0xE0, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0xE1, 0xFC, 0x00, 0x00,
+0xFF, 0xC0, 0xF0, 0x00, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xE0, 0x01, 0xF0, 0x00, 0x00,
+0xFF, 0xC0, 0x78, 0x00, 0x3F, 0xFF, 0x0C, 0x0F, 0xFF, 0xFF, 0xFF, 0xC0, 0x02, 0xE0, 0x00, 0x00,
+0xFF, 0xE0, 0x38, 0x00, 0x0F, 0xFF, 0x00, 0x00, 0x00, 0x07, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xF0, 0x1C, 0x00, 0x07, 0xFF, 0xC0, 0x00, 0x00, 0x1F, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFC, 0x0C, 0x00, 0x03, 0xFF, 0xF8, 0x00, 0x03, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFF, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFF, 0x80, 0x00, 0x00, 0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x0B, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x24, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x1F, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x01, 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01,
+0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x80, 0x03,
+0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xE1, 0x00, 0x80, 0x0F,
+0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x80, 0xE0, 0x8F, 0xFF,
+0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3E, 0x00, 0x7C, 0xE7, 0xBF,
+0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFC, 0x01, 0xCF, 0xEE, 0x7F,
+0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xE0, 0x00, 0xC1, 0xF8, 0xDF
+};
+
+void draw_player(Item player) {
+    _ssd1306_pixel(&dev, player.x_pos,      player.y_pos,       false);
+    _ssd1306_pixel(&dev, player.x_pos + 1,  player.y_pos,       false);
+    _ssd1306_pixel(&dev, player.x_pos - 1,  player.y_pos,       false);
+    _ssd1306_pixel(&dev, player.x_pos,      player.y_pos + 1,   false);
+    _ssd1306_pixel(&dev, player.x_pos,      player.y_pos - 1,   false);
+
+    ssd1306_show_buffer(&dev);
 }
 
+void redraw_player(Item player) {
+    _ssd1306_pixel(&dev, player.x_prev,      player.y_prev,       true);
+    _ssd1306_pixel(&dev, player.x_prev + 1,  player.y_prev,       true);
+    _ssd1306_pixel(&dev, player.x_prev - 1,  player.y_prev,       true);
+    _ssd1306_pixel(&dev, player.x_prev,      player.y_prev + 1,   true);
+    _ssd1306_pixel(&dev, player.x_prev,      player.y_prev - 1,   true);
 
-/// @brief Draw the stick
-/// @param stick stick structure
-void draw_stick(Stick stick) {
-    // set first column
-    _ssd1306_line(&display, stick.x_pos, stick.y_pos, stick.x_pos, stick.y_pos+stick.length, false);
-    // set second column
-	_ssd1306_line(&display, stick.x_pos+1, stick.y_pos, stick.x_pos+1, stick.y_pos+stick.length, false);
-    // draw stick
-    ssd1306_show_buffer(&display);
+    ssd1306_show_buffer(&dev);
+
+    draw_player(player);
 }
 
+void draw_enemy(Item enemy) {
+    _ssd1306_pixel(&dev, enemy.x_pos,       enemy.y_pos,        false);
+    _ssd1306_pixel(&dev, enemy.x_pos + 2,   enemy.y_pos,        false);
+    _ssd1306_pixel(&dev, enemy.x_pos - 2,   enemy.y_pos,        false);
+    _ssd1306_pixel(&dev, enemy.x_pos,       enemy.y_pos + 2,    false);
+    _ssd1306_pixel(&dev, enemy.x_pos,       enemy.y_pos - 2,    false);
 
-/// @brief Update stick
-/// @param stick stick structure
-void update_stick(Stick stick) {
-    // erase old position pixels if sticke moved 
-    if(stick.y_speed < 0) {
-        _ssd1306_line(&display, stick.x_pos, stick.y_pos + stick.length - stick.y_speed, stick.x_pos, stick.y_pos + stick.length + 1, true);
-        _ssd1306_line(&display, stick.x_pos + 1, stick.y_pos + stick.length - stick.y_speed, stick.x_pos + 1,stick.y_pos + stick.length + 1, true);
-    } else if(stick.y_speed > 0) {
-        _ssd1306_line(&display, stick.x_pos, stick.y_pos - stick.y_speed, stick.x_pos, stick.y_pos - 1, true);
-        _ssd1306_line(&display, stick.x_pos + 1, stick.y_pos - stick.y_speed, stick.x_pos + 1, stick.y_pos - 1, true);
-    }
-    ssd1306_show_buffer(&display);
-
-    // draw dtick at new position
-    if(stick.y_speed != 0) {
-        draw_stick(stick);
-    }
+    ssd1306_show_buffer(&dev);
 }
 
+void redraw_enemy(Item enemy) {
 
-/// @brief Draw a ball
-/// @param ball ball structure
-void draw_ball(Ball ball) {
-    // set ball pixels
-    _ssd1306_pixel(&display, ball.x_pos, ball.y_pos + 1, false);
-    _ssd1306_pixel(&display, ball.x_pos + 1, ball.y_pos, false);
-    _ssd1306_pixel(&display, ball.x_pos, ball.y_pos, false);
-    _ssd1306_pixel(&display, ball.x_pos - 1, ball.y_pos, false);
-    _ssd1306_pixel(&display, ball.x_pos, ball.y_pos - 1, false);
-    // draw ball
-    ssd1306_show_buffer(&display);
+    _ssd1306_pixel(&dev, enemy.x_pos,       enemy.y_prev,        true);
+    _ssd1306_pixel(&dev, enemy.x_pos + 2,   enemy.y_prev,        true);
+    _ssd1306_pixel(&dev, enemy.x_pos - 2,   enemy.y_prev,        true);
+    _ssd1306_pixel(&dev, enemy.x_pos,       enemy.y_prev + 2,    true);
+    _ssd1306_pixel(&dev, enemy.x_pos,       enemy.y_prev - 2,    true);
+
+    ssd1306_show_buffer(&dev);
+
+    draw_enemy(enemy);
 }
 
+void draw_heart(Item heart) {
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_pos,        false);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_pos,        false);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_pos,        false);
+    _ssd1306_pixel(&dev, heart.x_pos + 3,   heart.y_pos,        false);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_pos,        false);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_pos,        false);
+    _ssd1306_pixel(&dev, heart.x_pos - 3,   heart.y_pos,        false);
 
-/// @brief Update ball 
-/// @param ball ball structure
-void update_ball(Ball ball) {
-    // erase old position pixels of the ball
-    _ssd1306_pixel(&display, ball.x_pos_old, ball.y_pos_old, true);
-    _ssd1306_pixel(&display, ball.x_pos_old + 1, ball.y_pos_old, true);
-    _ssd1306_pixel(&display, ball.x_pos_old - 1, ball.y_pos_old, true);
-    _ssd1306_pixel(&display, ball.x_pos_old, ball.y_pos_old + 1, true);
-    _ssd1306_pixel(&display, ball.x_pos_old, ball.y_pos_old - 1, true);
-    ssd1306_show_buffer(&display);
-    // draw ball
-    draw_ball(ball);
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_pos + 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_pos + 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_pos + 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_pos + 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_pos + 1,    false);
+
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_pos + 2,    false);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_pos + 2,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_pos + 2,    false);
+
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_pos + 3,    false);
+
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_pos - 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_pos - 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_pos - 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos + 3,   heart.y_pos - 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_pos - 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_pos - 1,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 3,   heart.y_pos - 1,    false);
+
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_pos - 2,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_pos - 2,    false);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_pos - 2,    false);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_pos - 2,    false);
+
+    ssd1306_show_buffer(&dev);
 }
 
+void redraw_heart(Item heart) {
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_prev,        true);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_prev,        true);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_prev,        true);
+    _ssd1306_pixel(&dev, heart.x_pos + 3,   heart.y_prev,        true);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_prev,        true);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_prev,        true);
+    _ssd1306_pixel(&dev, heart.x_pos - 3,   heart.y_prev,        true);
 
-/// @brief initialize display
-void init_display() {
-    i2c_master_init(&display, 
-                    CONFIG_SDA_GPIO,
-                    CONFIG_SCL_GPIO,
-                    CONFIG_RESET_GPIO);
-    ssd1306_init(&display, 128, 64);
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_prev + 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_prev + 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_prev + 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_prev + 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_prev + 1,    true);
+
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_prev + 2,    true);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_prev + 2,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_prev + 2,    true);
+
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_prev + 3,    true);
+
+    _ssd1306_pixel(&dev, heart.x_pos,       heart.y_prev - 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_prev - 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_prev - 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos + 3,   heart.y_prev - 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_prev - 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_prev - 1,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 3,   heart.y_prev - 1,    true);
+
+    _ssd1306_pixel(&dev, heart.x_pos + 1,   heart.y_prev - 2,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 1,   heart.y_prev - 2,    true);
+    _ssd1306_pixel(&dev, heart.x_pos + 2,   heart.y_prev - 2,    true);
+    _ssd1306_pixel(&dev, heart.x_pos - 2,   heart.y_prev - 2,    true);
+
+    ssd1306_show_buffer(&dev);
+
+    draw_heart(heart);
+}
+
+void joystick(void *pvParameter) {
     
-}
-
-
-/// @brief draw all game objects
-void draw_objects() {
-    draw_field();
-    draw_stick(pong.player);
-    draw_stick(pong.bot);
-    draw_ball(pong.ball);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-}
-
-/// @brief Function to handle joystick status
-/// @param pvParameter task parameter(NULL)
-void joystick_task(void *pvParameter) {
     while(1) {
-        // get raw value 
+        int x_axis_val = adc1_get_raw(JOYSTICK_X_AXIS);
         int y_axis_val = adc1_get_raw(JOYSTICK_Y_AXIS);
-        // set player speed according to joystick Y axis value
-        if(y_axis_val >= 0 && y_axis_val <= 500) {
-            pong.player.y_speed = 6;
-        } else if (y_axis_val > 500 && y_axis_val <= 1000) {
-            pong.player.y_speed = 3;
-        } else if (y_axis_val > 1000 && y_axis_val <= 1800) {
-            pong.player.y_speed = 1;
-        } else if (y_axis_val > 1800 && y_axis_val <= 2200) {
-            pong.player.y_speed = 0;
-        } else if (y_axis_val > 2200 && y_axis_val <= 3000) {
-            pong.player.y_speed = -1;
-        } else if (y_axis_val > 3000 && y_axis_val <= 3500) {
-            pong.player.y_speed = -3;
+
+        // from 0 to 4095
+        if(x_axis_val >= 0 && x_axis_val <= 256) {
+            game.player.x_next = 8;
+        } else if (x_axis_val > 256 && x_axis_val <= 768) {
+            game.player.x_next = 6;
+        } else if (x_axis_val > 768 && x_axis_val <= 1280) {
+            game.player.x_next = 4;
+        } else if (x_axis_val > 1280 && x_axis_val <= 1720) {
+            game.player.x_next = 2;
+        } else if (x_axis_val > 1720 && x_axis_val <= 2176) { // 4095/2 = 2048
+            game.player.x_next = 0;
+        } else if (x_axis_val > 2176 && x_axis_val <= 2688) {
+            game.player.x_next = -2;
+        } else if (x_axis_val > 2688 && x_axis_val <= 3200) {
+            game.player.x_next = -4;
+        } else if (x_axis_val > 3200 && x_axis_val <= 3712) {
+            game.player.x_next = -6;
         } else {
-            pong.player.y_speed = -6;
+            game.player.x_next = -8;
         }
-        // delay to make space for other tasks to run
+
+        if(y_axis_val >= 0 && y_axis_val <= 256) {
+            game.player.y_next = 8;
+        } else if (y_axis_val > 256 && y_axis_val <= 768) {
+            game.player.y_next = 6;
+        } else if (y_axis_val > 768 && y_axis_val <= 1280) {
+            game.player.y_next = 4;
+        } else if (y_axis_val > 1280 && y_axis_val <= 1720) {
+            game.player.y_next = 2;
+        } else if (y_axis_val > 1720 && y_axis_val <= 2176) { // 4095/2 = 2048
+            game.player.y_next = 0;
+        } else if (y_axis_val > 2176 && y_axis_val <= 2688) {
+            game.player.y_next = -2;
+        } else if (y_axis_val > 2688 && y_axis_val <= 3200) {
+            game.player.y_next = -4;
+        } else if (y_axis_val > 3200 && y_axis_val <= 3712) {
+            game.player.y_next = -6;
+        } else {
+            game.player.y_next = -8;
+        }
+
+        //is not moving without delay
 		vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
 
+void generate_result() {
+    ssd1306_clear_screen(&dev, false);
 
-/// @brief initialize joystick
-void init_joystick() {
-    // set width (0-4095)
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    // configure the channel
-    adc1_config_channel_atten(JOYSTICK_Y_AXIS, ADC_ATTEN_DB_11);
-}
+    if(game.win) {
+        game.win = 0;
+        ssd1306_display_text_x3(&dev, 0, " WOW", 4, false);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
+        ssd1306_display_text_x3(&dev, 0, " NICE", 5, false);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
+        ssd1306_display_text_x3(&dev, 0, " TRY", 4, false);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
+        ssd1306_display_text_x3(&dev, 0, "AGAIN", 5, false);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
+    } else if(game.screamer) {
+        game.screamer = 0;
+        ssd1306_bitmaps(&dev, 0, 0, me, 128, 64, true);
+        vTaskDelay(300 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
+        ssd1306_bitmaps(&dev, 0, 0, me, 128, 64, true);
+        vTaskDelay(300 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
+        ssd1306_bitmaps(&dev, 0, 0, me, 128, 64, true);
+        vTaskDelay(300 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
 
-/// @brief initialize game objects 
-void init_game_objects() {
-    pong.field.x0 = 1;
-    pong.field.x1 = 126;
-    pong.field.y0 = 1;
-    pong.field.y1 = 62;
-    pong.field.width = 126;
-    pong.field.height = 62;
-
-    pong.ball.x_pos = 64;
-    pong.ball.y_pos = 32;
-    pong.ball.x_speed = 5;
-    pong.ball.y_speed = 5;
-    pong.ball.radius = 1;
-
-    pong.player.length = 12;
-    pong.player.x_pos = 0;
-    pong.player.y_pos = pong.field.y0;
-    pong.player.y_speed = 0;
-
-    pong.bot.length = 12;
-    pong.bot.x_pos = 126;
-    pong.bot.y_pos = 32;
-    pong.bot.y_speed = 5;
-
-    pong.score1 = 0;
-    pong.score2 = 0;
-}
-
-
-/// @brief Process score
-void process_score() {
-
-    if(pong.score1 == 5) {
-        // clear the screen
-        ssd1306_clear_screen(&display, false);
-        // print text
-        ssd1306_display_text(&display, 3, "!!!PLAYER WON!!!", 16, false);   
-        // wait
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // clear the screen
-        ssd1306_clear_screen(&display, false);
-        // reset score
-        pong.score1 = 0;
-        pong.score2 = 0;
-    } else if (pong.score2 == 5) {
-        // clear the screen
-        ssd1306_clear_screen(&display, false);
-        // print text
-        ssd1306_display_text(&display, 3, "!!!AI BOT WON!!!", 16, false);
-        // wait
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // clear the screen
-        ssd1306_clear_screen(&display, false);
-        // reset score
-        pong.score1 = 0;
-        pong.score2 = 0;
-    } else {
-        // make string with score
-        char score[5];
-        snprintf(score, 5, " %d:%d", pong.score1, pong.score2);
-        // clear the screen
-        ssd1306_clear_screen(&display, false);
-        // print score
-        ssd1306_display_text_x3(&display, 3, score, strlen(score), false);
-        // wait
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // clear the screen
-        ssd1306_clear_screen(&display, false);
-
+        ssd1306_display_text_x3(&dev, 0, " YOU", 4, false);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
+        ssd1306_display_text_x3(&dev, 0, "LOSE", 4, false);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        ssd1306_clear_screen(&dev, false);
     }
-    // set ball position to the center of the screen
-    pong.ball.x_pos = 64;
-    pong.ball.y_pos = 32;
-    // redraw game objects
-    draw_objects();
+
+    ssd1306_clear_screen(&dev, false);
+
+    game.player.x_pos = 20;
+    game.player.y_pos = 20;
+
+    game.enemy_one.x_pos = 50;
+    game.enemy_one.y_pos = 1;
+
+    game.heart.x_pos = 80;
+    game.heart.y_pos = 8;
+
+    draw_player(game.player);
+    draw_enemy(game.enemy_one);
+    draw_heart(game.heart);
+
+    vTaskDelay(500 / portTICK_PERIOD_MS);
 }
 
+void move_player() {
 
-/// @brief process ball
-void process_ball() {
-    // save old position
-    pong.ball.x_pos_old = pong.ball.x_pos;
-    pong.ball.y_pos_old = pong.ball.y_pos;
+    game.player.x_prev = game.player.x_pos;
+    game.player.y_prev = game.player.y_pos;
 
-    // check left border
-    if((pong.ball.x_pos - pong.ball.radius + pong.ball.x_speed) <= 2)
-    {   
+    // into or out the frame
+    if((((game.player.x_pos + game.player.x_next + game.player.radius) <= game.frame.x1) &&
+       ((game.player.x_pos + game.player.x_next) > game.frame.x0))) {
+        game.player.x_pos+= game.player.x_next;
+    } else {
+        //right side
+        if((game.player.x_pos + game.player.x_next + game.player.radius) > game.frame.x1)
+            game.player.x_pos = game.frame.x0;
+        //left side
+        else
+            game.player.x_pos = game.frame.x1 - game.player.radius;
+    }
+
+    // into or out the frame
+    if((((game.player.y_pos + game.player.y_next + game.player.radius) <= game.frame.y1) &&
+       ((game.player.y_pos + game.player.y_next) > game.frame.y0))   ) {
+        game.player.y_pos+= game.player.y_next;
+    } else {
+        //bottom
+        if((game.player.y_pos + game.player.y_next + game.player.radius) > game.frame.y1)
+            game.player.y_pos = game.frame.y0;
+        //top
+        else
+            game.player.y_pos = game.frame.y1 - game.player.radius;
+    }
+}
+
+void move_enemy() {
+
+    game.enemy_one.y_prev = game.enemy_one.y_pos;
+
+    //top -> change direction
+    if((game.enemy_one.y_pos + game.enemy_one.radius) <= game.frame.y0) {
+        game.enemy_one.y_next = -game.enemy_one.y_next;
+    //bottom -> change direction
+    } else if((game.enemy_one.y_pos + game.enemy_one.radius) >= game.frame.y1) {
+        game.enemy_one.y_next = -game.enemy_one.y_next;
+    }
+    //met some player (me)
+    if((((game.enemy_one.y_pos - (game.enemy_one.radius+2)) <= game.player.y_pos + game.player.radius) &&
+        ((game.enemy_one.y_pos + (game.enemy_one.radius+2)) >= game.player.y_pos - (game.player.radius-1))) &&
+        (((game.enemy_one.x_pos - (game.enemy_one.radius+2)) <= game.player.x_pos + game.player.radius) &&
+        ((game.enemy_one.x_pos + (game.enemy_one.radius+2)) >= game.player.x_pos - (game.player.radius-1)))) {
         
-        if(((pong.ball.y_pos - pong.ball.radius) <= pong.player.y_pos + pong.player.length) &&
-           ((pong.ball.y_pos + pong.ball.radius) >= pong.player.y_pos))
-        {
-            // ball hits stick
-            if(pong.ball.y_pos < pong.player.y_pos + 6) {
-                pong.ball.y_speed = -5;
-            } else {
-                pong.ball.y_speed = 5;
-            }
-            pong.ball.x_pos = 3;
-            pong.ball.x_speed*=-1;
-        } else {
-            // ball hits left border
-            pong.score2++;
-            process_score();
+        game.screamer = 1; 
+        generate_result();
+        return;
+    }
+
+    game.enemy_one.y_pos+=game.enemy_one.y_next;
+}
+
+void move_heart() {
+
+    game.heart.y_prev = game.heart.y_pos;
+
+    //top -> change direction
+    if((game.heart.y_pos + game.heart.radius + game.heart.y_next) <= game.frame.y0) {
+        game.heart.y_next = -game.heart.y_next;
+    //bottom -> change direction
+    } else if((game.heart.y_pos + game.heart.radius + game.heart.y_next) >= game.frame.y1) {
+        game.heart.y_next = -game.heart.y_next;
+    }
+    //met some player (me)
+    if((((game.heart.y_pos - (game.heart.radius-2)) <= game.player.y_pos + game.player.radius) &&
+           ((game.heart.y_pos + (game.heart.radius-1)) >= game.player.y_pos - (game.player.radius-1))) &&
+        (((game.heart.x_pos - (game.heart.radius-1)) <= game.player.x_pos + game.player.radius) &&
+           ((game.heart.x_pos + (game.heart.radius-1)) >= game.player.x_pos - (game.player.radius-1)))) {
+            game.win = 1; 
+            generate_result();
             return;
-        }
-        
-    } else if((pong.ball.x_pos - pong.ball.radius + pong.ball.x_speed) >= 125) {
-        // check right border
-        if(((pong.ball.y_pos - pong.ball.radius) <= pong.bot.y_pos + pong.bot.length) &&
-           ((pong.ball.y_pos + pong.ball.radius) >= pong.bot.y_pos))
-        {
-            // ball hits stick
-            if(pong.ball.y_pos < pong.bot.y_pos + 6) {
-                pong.ball.y_speed = -5;
-            } else {
-                pong.ball.y_speed = 5;
-            }
-            pong.ball.x_pos = 124;
-            pong.ball.x_speed*=-1;
-        } else {
-            // ball hits right border
-            pong.score1++;
-            process_score();
-            return;
-        }
-    } else {
-        // ball between borders
-        pong.ball.x_pos+=pong.ball.x_speed;
     }
-    // check y axis ball position
-    if(((pong.ball.y_pos + pong.ball.radius + pong.ball.y_speed) >= pong.field.y1) ||
-        ((pong.ball.y_pos - pong.ball.radius + pong.ball.y_speed) <= pong.field.y0)) {
-        // ball hits top/bottom border
-        if(pong.ball.y_speed > 0) {
-            pong.ball.y_pos=pong.field.y1 - 1;
-        } else {
-            pong.ball.y_pos=pong.field.y0 + 1;
-        }
-        pong.ball.y_speed*=-1;
-    } else {
-        // ball between top and bottom borders
-        pong.ball.y_pos+=pong.ball.y_speed;
-    }
+    
+    game.heart.y_pos+=game.heart.y_next;
 }
 
-
-/// @brief process player
-void process_player() {
-
-    if(!(((pong.player.y_pos + pong.player.y_speed + pong.player.length) > pong.field.y1) ||
-       ((pong.player.y_pos + pong.player.y_speed) <= pong.field.y0))) {
-        // stick between top and bottom borders
-        pong.player.y_pos+= pong.player.y_speed;
-    } else {
-        if(pong.player.y_speed > 0) {
-            // set stick to the lowest position
-            pong.player.y_pos = pong.field.y1 - pong.player.length;
-        } else {
-            // set stick to the highest position
-            pong.player.y_pos = pong.field.y0;
-        }
-    }
-}
-
-
-/// @brief process bot
-void process_bot() {
-    // change bot stick speed according to ball position 
-    if((pong.bot.y_pos + 4) < pong.ball.y_pos) {
-        pong.bot.y_speed = 4;
-    } else if ((pong.bot.y_pos + 8) > pong.ball.y_pos) {
-        pong.bot.y_speed = -4;
-    } else {
-        pong.bot.y_speed = 0;
-    }
-    // change bot stick position 
-    if(!(((pong.bot.y_pos + pong.bot.y_speed + pong.bot.length) > pong.field.y1) ||
-       ((pong.bot.y_pos + pong.bot.y_speed) < pong.field.y0))) {
-        // bot stick between top and bottom border
-        pong.bot.y_pos+= pong.bot.y_speed;
-    } 
-    else {
-        if(pong.bot.y_speed > 0) {
-            // set stick to the lowest position
-            pong.bot.y_pos = pong.field.y1 - pong.bot.length;
-        } else {
-            // set stick to the highest position
-            pong.bot.y_pos = pong.field.y0;
-        }
-    }
-}
-
-
-/// @brief Handle display
-/// @param pvParameter task parameter
-void display_task(void *pvParameter) {
+void display(void *pvParameter) {
+    
     while(1) {
-        // process player
-        process_player();
-        // update player stick position
-        update_stick(pong.player);
-        // process bot
-        process_bot();
-        // update bot stick position
-        update_stick(pong.bot);
-        // process ball
-        process_ball();
-        // update ball position
-        update_ball(pong.ball);
-        // delay to make space for other tasks to run
+
+        move_player();
+        redraw_player(game.player);
+
+        move_enemy();
+        redraw_enemy(game.enemy_one);
+
+        move_heart();
+        redraw_heart(game.heart);
+
+        //is not working without delay
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
 
+void start() {
 
-/// @brief start the game
-void start_game() {
-    // init game objects 
-    init_game_objects();
-    // draw game objects
-    draw_objects();
-    // create display task
-    xTaskCreate(&display_task, "display_task", 2048, NULL, 5, NULL);
-    // create joystick task
-    xTaskCreate(&joystick_task, "joystick_task", 2048, NULL, 5, NULL);
+    game.win = 0;
+    game.screamer = 0; 
+
+    game.frame.x0 = 1;
+    game.frame.x1 = 126;
+    game.frame.y0 = 1;
+    game.frame.y1 = 62;
+
+    game.player.radius = 1;
+    game.player.x_pos = 70;
+    game.player.y_pos = 62;
+    game.player.x_next = 1;
+    game.player.y_next = 1;
+
+    game.enemy_one.radius = 2;
+    game.enemy_one.x_pos = 50;
+    game.enemy_one.y_pos = 1;
+    game.enemy_one.y_next = 5;
+     
+    game.heart.radius = 4;
+    game.heart.x_pos = 80;
+    game.heart.y_pos = 8;
+    game.heart.y_next = 3;
+
+    draw_player(game.player);
+    draw_enemy(game.enemy_one);
+    draw_heart(game.heart);
+
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+
+    //https://github.com/espressif/esp-idf/issues/7367
+    xTaskCreate(&display, "display", 2048, NULL, 5, NULL);
+    xTaskCreate(&joystick, "joystick", 2048, NULL, 5, NULL);
 }
