@@ -89,7 +89,3 @@ Hardware-specific SDA, SCL and reset pin configuration is handled through the pr
 - `src/game.h` — game data structures and hardware-related declarations
 - `components/ssd1306/` — OLED display component
 - `platformio.ini` — ESP32 / ESP-IDF PlatformIO configuration
-
-## Notes
-
-The original embedded application and project configuration are preserved unchanged. This README was added later to make the repository easier to understand from GitHub.
